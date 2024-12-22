@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ترجمة الصوت إلى الفرنسية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            direction: rtl;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        .output-box {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: right;
+        }
+        #start-recording {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #start-recording:active {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>ترجمة الصوت من العربية إلى الفرنسية</h2>
+        <p>اضغط على الزر لتبدأ التحدث باللغة العربية، وسيتم ترجمة كلامك إلى اللغة الفرنسية.</p>
+        <button id="start-recording" onclick="startRecording()">ابدأ التسجيل</button>
+        <div id="output" class="output-box">
+            <!-- سيتم عرض الترجمة هنا -->
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let recognition;
+        let isRecording = false;
+
+        // التحقق من دعم Web Speech API
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = 'ar-SA'; // لغة الإدخال (العربية)
+            recognition.continuous = false; // لا تواصل التسجيل بعد التوقف
+            recognition.interimResults = false; // لا تعرض النتائج الجزئية
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                $('#start-recording').text("إيقاف التسجيل");
+            };
+
+            recognition.onend = function() {
+                isRecording = false;
+                $('#start-recording').text("ابدأ التسجيل");
+            };
+
+            recognition.onresult = function(event) {
+                let arabicText = event.results[0][0].transcript;
+                console.log("النص المسموع: ", arabicText);
+                // إرسال النص إلى المترجم
+                translateText(arabicText);
+            };
+        } else {
+            alert("للأسف، المتصفح لا يدعم التسجيل الصوتي.");
+        }
+
+        // بدء أو إيقاف التسجيل الصوتي
+        function startRecording() {
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        // إرسال النص إلى مترجم باستخدام Google Translate API
+        function translateText(text) {
+            $.ajax({
+                url: 'https://translation.googleapis.com/language/translate/v2',
+                type: 'POST',
+                data: JSON.stringify({
+                    q: text,
+                    target: 'fr',
+                    format: 'text',
+                    key: 'YOUR_GOOGLE_TRANSLATE_API_KEY' // يجب أن تضع مفتاح API هنا
+                }),
+                contentType: 'application/json',
+                success: function(response) {
+                    let translatedText = response.data.translations[0].translatedText;
+                    $('#output').text(translatedText);
+                },
+                error: function() {
+                    alert("حدث خطأ أثناء الترجمة.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>
